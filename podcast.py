@@ -88,11 +88,6 @@ class NewsContentScraper:
                 'url': 'https://www.fox9.com/news',
                 'article_link_selector': '.article a, .story a',
                 'priority': 2
-            },
-            'Pioneer Press': {
-                'url': 'https://www.twincities.com',
-                'article_link_selector': '.article-title a, .entry-title a',
-                'priority': 2
             }
         }
 
@@ -491,7 +486,7 @@ st.markdown("""
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
-        
+
         /* Headers */
         h1 {
             color: #60A5FA;
@@ -500,20 +495,20 @@ st.markdown("""
             margin-bottom: 1.5rem !important;
             text-align: center;
         }
-        
+
         h2 {
             color: #93C5FD;
             font-size: 1.8rem !important;
             font-weight: 600 !important;
             margin-top: 2rem !important;
         }
-        
+
         h3 {
             color: #BFDBFE;
             font-size: 1.3rem !important;
             font-weight: 500 !important;
         }
-        
+
         /* Cards for articles */
         .article-card {
             background-color: #1F2937;
@@ -523,7 +518,7 @@ st.markdown("""
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             border: 1px solid #374151;
         }
-        
+
         /* Buttons */
         .stButton button {
             background: linear-gradient(45deg, #2563EB, #3B82F6);
@@ -537,19 +532,19 @@ st.markdown("""
             letter-spacing: 0.5px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-        
+
         .stButton button:hover {
             background: linear-gradient(45deg, #1E40AF, #2563EB);
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
             transform: translateY(-2px);
         }
-        
+
         /* Sidebar styling */
         .css-1d391kg, [data-testid="stSidebar"] {
             background-color: #111827;
             border-right: 1px solid #374151;
         }
-        
+
         .sidebar-card {
             background-color: #1F2937;
             border-radius: 12px;
@@ -558,7 +553,7 @@ st.markdown("""
             border: 1px solid #374151;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-        
+
         /* Tabs */
         .stTabs [data-baseweb="tab-list"] {
             gap: 2rem;
@@ -567,17 +562,17 @@ st.markdown("""
             padding: 0.5rem;
             border-radius: 12px;
         }
-        
+
         .stTabs [data-baseweb="tab"] {
             color: #9CA3AF;
             font-weight: 500;
         }
-        
+
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
             color: #60A5FA;
             border-bottom-color: #60A5FA;
         }
-        
+
         /* Audio player */
         audio {
             width: 100%;
@@ -585,7 +580,7 @@ st.markdown("""
             border-radius: 8px;
             background-color: #374151;
         }
-        
+
         /* Source badges */
         .source-badge {
             display: inline-block;
@@ -598,7 +593,7 @@ st.markdown("""
             margin-bottom: 0.75rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
+
         /* Language selector */
         .stSelectbox select {
             background-color: #374151;
@@ -606,14 +601,14 @@ st.markdown("""
             border: 1px solid #4B5563;
             border-radius: 8px;
         }
-        
+
         /* Expander */
         .streamlit-expanderHeader {
             background-color: #1F2937;
             border-radius: 8px;
             border: 1px solid #374151;
         }
-        
+
         /* Status messages */
         .stSuccess, .stInfo {
             background-color: #1F2937;
@@ -622,19 +617,19 @@ st.markdown("""
             padding: 1rem;
             color: #E5E7EB;
         }
-        
+
         /* Links */
         a {
             color: #60A5FA;
             text-decoration: none;
             transition: color 0.2s ease;
         }
-        
+
         a:hover {
             color: #93C5FD;
             text-decoration: none;
         }
-        
+
         /* Custom sidebar button */
         .sidebar-button {
             background: linear-gradient(45deg, #2563EB, #3B82F6);
@@ -648,17 +643,17 @@ st.markdown("""
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-        
+
         .sidebar-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
         }
-        
+
         /* Custom progress bars */
         .stProgress > div > div {
             background-color: #2563EB;
         }
-        
+
         /* Custom metric styling */
         .metric-card {
             background-color: #1F2937;
@@ -667,7 +662,7 @@ st.markdown("""
             border: 1px solid #374151;
             margin-bottom: 1rem;
         }
-        
+
         .metric-value {
             font-size: 1.5rem;
             font-weight: bold;
@@ -684,7 +679,7 @@ def main():
         st.markdown("""
             <h1>
                 <span style='font-size: 3rem'>📰</span>
-                Minnesota News Hub
+                MinneDigest: An AI-Powered News Digest App
             </h1>
         """, unsafe_allow_html=True)
 
@@ -697,16 +692,6 @@ def main():
     # Initialize session state
     if 'articles' not in st.session_state:
         st.session_state.articles = None
-
-    # Enhanced sidebar
-    st.sidebar.markdown("""
-        <div class='sidebar-card'>
-            <h3 style='margin-top: 0; color: #60A5FA;'>🎯 Control Center</h3>
-            <p style='color: #9CA3AF; font-size: 0.9rem;'>
-                Manage your news experience from here
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
 
     openai_api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -726,7 +711,7 @@ def main():
         </div>
         """, unsafe_allow_html=True):
         with st.spinner("🌟 Gathering the latest stories..."):
-            st.session_state.articles = scraper.scrape_news(total_articles=5)
+            st.session_state.articles = scraper.scrape_news(total_articles=7)
 
     # Tabs with enhanced styling
     tabs = st.tabs(["📰 News Feed", "🎙️ Daily Podcast"])
@@ -736,20 +721,20 @@ def main():
         if st.session_state.articles:
             for idx, article in enumerate(st.session_state.articles):
                 with st.container():
-                    st.markdown("""
-                        <div class='article-card'>
-                    """, unsafe_allow_html=True)
+                    # st.markdown("""
+                    #     <div class='article-card'>
+                    # """, unsafe_allow_html=True)
                     st.markdown(f"""
                         <div class='source-badge'>
                             {article['source']}
                         </div>
                     """, unsafe_allow_html=True)
                     display_article(article, idx, translator, tts)
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    # st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div class='article-card' style='text-align: center;'>
-                    <h3 style='color: #60A5FA;'>Welcome to Minnesota News Hub! 🌟</h3>
+                    <h3 style='color: #60A5FA;'>Welcome to MinneDigest News Hub! 🌟</h3>
                     <p style='color: #9CA3AF;'>Click 'Refresh News Feed' in the sidebar to get started</p>
                 </div>
             """, unsafe_allow_html=True)
