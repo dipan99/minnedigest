@@ -259,9 +259,61 @@ class TextToSpeech:
             return False
 
 
+# def display_article(article, idx, translator, tts):
+#     st.subheader(f"{article['source']}: {article['title']}")
+#     # st.write(f"Date: {article['date']}")
+#     st.write(f"URL: {article['url']}")
+
+#     # Language selection for this article
+#     languages = list(LanguageConfig.SUPPORTED_LANGUAGES.keys())
+#     col1, col2 = st.columns([3, 1])
+
+#     with col2:
+#         selected_language = st.selectbox(
+#             "Select Language",
+#             languages,
+#             key=f"lang_select_{idx}",
+#             index=languages.index('english')
+#         )
+
+#     # Get translations based on selected language
+#     lang_code = LanguageConfig.SUPPORTED_LANGUAGES[selected_language]['code']
+
+#     if selected_language != 'english':
+#         translated_title = translator.translate_text(
+#             article['title'], lang_code)
+#         translated_summary = translator.translate_text(
+#             article['summary'], lang_code)
+#     else:
+#         translated_title = article['title']
+#         translated_summary = article['summary']
+
+#     with col1:
+#         st.write("Summary:")
+#         st.write(translated_summary)
+#         if selected_language != 'english':
+#             with st.expander("Show Original English"):
+#                 st.write(article['summary'])
+
+#     # Generate and play audio
+#     audio_key = f"audio_{idx}_{selected_language}"
+#     if audio_key not in st.session_state:
+#         st.session_state[audio_key] = None
+
+#     if st.button("Generate Audio", key=f"audio_btn_{idx}"):
+#         with st.spinner("Generating audio..."):
+#             audio_file = f"article_{selected_language}_{idx}.mp3"
+#             if tts.generate_audio(translated_summary, audio_file, selected_language):
+#                 st.session_state[audio_key] = audio_file
+#                 st.rerun()
+
+#     if st.session_state[audio_key]:
+#         st.audio(st.session_state[audio_key])
+
+#     st.divider()
+
 def display_article(article, idx, translator, tts):
     st.subheader(f"{article['source']}: {article['title']}")
-    # st.write(f"Date: {article['date']}")
     st.write(f"URL: {article['url']}")
 
     # Language selection for this article
@@ -297,18 +349,25 @@ def display_article(article, idx, translator, tts):
 
     # Generate and play audio
     audio_key = f"audio_{idx}_{selected_language}"
+
+    # Initialize the audio state if not already present
     if audio_key not in st.session_state:
         st.session_state[audio_key] = None
+
+    # Create a container for the audio player
+    audio_container = st.empty()
 
     if st.button("Generate Audio", key=f"audio_btn_{idx}"):
         with st.spinner("Generating audio..."):
             audio_file = f"article_{selected_language}_{idx}.mp3"
             if tts.generate_audio(translated_summary, audio_file, selected_language):
                 st.session_state[audio_key] = audio_file
-                st.rerun()
+                # Update only the audio container
+                audio_container.audio(audio_file)
 
-    if st.session_state[audio_key]:
-        st.audio(st.session_state[audio_key])
+    # Display existing audio if available
+    elif st.session_state[audio_key]:
+        audio_container.audio(st.session_state[audio_key])
 
     st.divider()
 
@@ -472,7 +531,7 @@ class PodcastGenerator:
 
 # Set page config for a wider layout and custom theme
 st.set_page_config(
-    page_title="Minnesota News Hub",
+    page_title="MinneDigest",
     page_icon="📰",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -672,9 +731,163 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# def main():
+#     # Header with logo and title
+#     col1, col2, col3 = st.columns([1, 2, 1])
+
+#     st.markdown("""
+#         <div class="banner-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+#             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Flag_of_Minnesota.svg/1200px-Flag_of_Minnesota.svg.png"
+#                 class="banner-image" alt="Minnesota Flag" style="height: 10rem; width: 20rem;">
+
+#         </div>
+#     """, unsafe_allow_html=True)
+
+#     with col2:
+#         st.markdown("""
+#             <h1>
+#                 <span style='font-size: 3rem'>📰</span>
+#                 MinneDigest: An AI-Powered News Digest App
+#             </h1>
+#         """, unsafe_allow_html=True)
+
+#     st.markdown("""
+#         <p style='text-align: center; color: #9CA3AF; margin-bottom: 2rem;'>
+#             Your personalized gateway to Minnesota news with AI-powered translations and audio
+#         </p>
+#     """, unsafe_allow_html=True)
+
+#     # Initialize session state
+#     if 'articles' not in st.session_state:
+#         st.session_state.articles = None
+
+#     openai_api_key = os.environ.get("OPENAI_API_KEY")
+
+#     # Initialize components
+#     scraper = NewsContentScraper()
+#     translator = ArticleTranslator()
+#     tts = TextToSpeech(openai_api_key)
+#     podcast_generator = PodcastGenerator(OpenAI(api_key=openai_api_key))
+
+#     # Enhanced fetch news button in sidebar
+#     if st.sidebar.markdown("""
+#         <div class='sidebar-button'>
+#             <h4 style='margin: 0; color: white;'>🔄 Refresh News Feed</h4>
+#             <p style='margin: 0.5rem 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.8);'>
+#                 Get the latest stories
+#             </p>
+#         </div>
+#         """, unsafe_allow_html=True):
+#         with st.spinner("🌟 Gathering the latest stories..."):
+#             st.session_state.articles = scraper.scrape_news(total_articles=5)
+
+#     # Tabs with enhanced styling
+#     tabs = st.tabs(["📰 News Feed", "🎙️ Daily Podcast"])
+
+#     # News Feed Tab
+#     with tabs[0]:
+#         if st.session_state.articles:
+#             for idx, article in enumerate(st.session_state.articles):
+#                 with st.container():
+#                     # st.markdown("""
+#                     #     <div class='article-card'>
+#                     # """, unsafe_allow_html=True)
+#                     st.markdown(f"""
+#                         <div class='source-badge'>
+#                             {article['source']}
+#                         </div>
+#                     """, unsafe_allow_html=True)
+#                     display_article(article, idx, translator, tts)
+#                     # st.markdown("</div>", unsafe_allow_html=True)
+#         else:
+#             st.markdown("""
+#                 <div class='article-card' style='text-align: center;'>
+#                     <h3 style='color: #60A5FA;'>Welcome to MinneDigest News Hub! 🌟</h3>
+#                     <p style='color: #9CA3AF;'>Click 'Refresh News Feed' in the sidebar to get started</p>
+#                 </div>
+#             """, unsafe_allow_html=True)
+
+#     # Podcast Tab
+#     with tabs[1]:
+#         if st.session_state.articles:
+#             st.markdown("""
+#                 <div class='article-card'>
+#                     <h2 style='text-align: center; margin-bottom: 2rem; color: #60A5FA;'>
+#                         🎙️ AI-Generated News Podcast
+#                     </h2>
+#                     <p style='text-align: center; color: #9CA3AF;'>
+#                         Get your personalized news digest in audio format
+#                     </p>
+#                 </div>
+#             """, unsafe_allow_html=True)
+
+#             if st.button("🎵 Generate Today's Podcast", key="generate_podcast"):
+#                 with st.spinner("Creating your personalized news podcast..."):
+#                     podcast_path, script = podcast_generator.create_podcast(
+#                         st.session_state.articles)
+#                     if podcast_path:
+#                         st.success("✨ Your podcast is ready!")
+#                         st.audio(podcast_path)
+#                         with st.expander("📝 View Podcast Script"):
+#                             st.markdown(script)
+#                     else:
+#                         st.error("Unable to generate podcast")
+
+#             # Show article sources in a clean grid
+#             with st.expander("📚 Today's News Sources"):
+#                 for article in st.session_state.articles:
+#                     st.markdown(f"""
+#                         <div class='metric-card'>
+#                             <strong style='color: #60A5FA;'>{article['source']}</strong>
+#                             <p style='color: #9CA3AF; margin: 0;'>{article['title']}</p>
+#                         </div>
+#                     """, unsafe_allow_html=True)
+#         else:
+#             st.markdown("""
+#                 <div class='article-card' style='text-align: center;'>
+#                     <h3 style='color: #60A5FA;'>Ready to Create Your Podcast? 🎧</h3>
+#                     <p style='color: #9CA3AF;'>First, refresh the news feed to get the latest stories</p>
+#                 </div>
+#             """, unsafe_allow_html=True)
+
+#     # Enhanced sidebar information
+#     st.sidebar.markdown("""
+#         <div class='sidebar-card'>
+#             <h3 style='margin-top: 0; color: #60A5FA;'>ℹ️ Features</h3>
+#             <div style='color: #9CA3AF; font-size: 0.9rem;'>
+#                 <div class='metric-card'>
+#                     <span class='metric-value'>🌐</span>
+#                     <p>Real-time news updates</p>
+#                 </div>
+#                 <div class='metric-card'>
+#                     <span class='metric-value'>🗣️</span>
+#                     <p>Multi-language translations</p>
+#                 </div>
+#                 <div class='metric-card'>
+#                     <span class='metric-value'>🎧</span>
+#                     <p>Text-to-speech in various languages</p>
+#                 </div>
+#                 <div class='metric-card'>
+#                     <span class='metric-value'>🎙️</span>
+#                     <p>AI-generated news podcasts</p>
+#                 </div>
+#             </div>
+#         </div>
+#     """, unsafe_allow_html=True)
+
+
 def main():
     # Header with logo and title
     col1, col2, col3 = st.columns([1, 2, 1])
+
+    st.markdown(""" 
+        <div class="banner-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Flag_of_Minnesota.svg/1200px-Flag_of_Minnesota.svg.png" 
+                class="banner-image" alt="Minnesota Flag" style="height: 10rem; width: 20rem;">
+            
+        </div>
+    """, unsafe_allow_html=True)
+
     with col2:
         st.markdown("""
             <h1>
@@ -693,6 +906,10 @@ def main():
     if 'articles' not in st.session_state:
         st.session_state.articles = None
 
+    # Fetch the language from session state or default to English
+    if 'selected_language' not in st.session_state:
+        st.session_state.selected_language = 'english'
+
     openai_api_key = os.environ.get("OPENAI_API_KEY")
 
     # Initialize components
@@ -701,17 +918,27 @@ def main():
     tts = TextToSpeech(openai_api_key)
     podcast_generator = PodcastGenerator(OpenAI(api_key=openai_api_key))
 
-    # Enhanced fetch news button in sidebar
-    if st.sidebar.markdown("""
-        <div class='sidebar-button'>
-            <h4 style='margin: 0; color: white;'>🔄 Refresh News Feed</h4>
-            <p style='margin: 0.5rem 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.8);'>
-                Get the latest stories
-            </p>
-        </div>
-        """, unsafe_allow_html=True):
-        with st.spinner("🌟 Gathering the latest stories..."):
-            st.session_state.articles = scraper.scrape_news(total_articles=7)
+    # Sidebar logic for refreshing news
+    with st.sidebar:
+        st.markdown("""
+            
+        """, unsafe_allow_html=True)
+
+        if st.button('Refresh News Feed'):
+            with st.spinner("🌟 Gathering the latest stories..."):
+                st.session_state.articles = scraper.scrape_news(
+                    total_articles=7)
+
+        # Language selector logic
+        # selected_language = st.selectbox(
+        #     "Select Language",
+        #     list(LanguageConfig.SUPPORTED_LANGUAGES.keys()),
+        #     index=list(LanguageConfig.SUPPORTED_LANGUAGES.keys()).index(
+        #         st.session_state.selected_language)
+        # )
+
+        # if selected_language != st.session_state.selected_language:
+        #     st.session_state.selected_language = selected_language
 
     # Tabs with enhanced styling
     tabs = st.tabs(["📰 News Feed", "🎙️ Daily Podcast"])
@@ -721,16 +948,12 @@ def main():
         if st.session_state.articles:
             for idx, article in enumerate(st.session_state.articles):
                 with st.container():
-                    # st.markdown("""
-                    #     <div class='article-card'>
-                    # """, unsafe_allow_html=True)
                     st.markdown(f"""
                         <div class='source-badge'>
                             {article['source']}
                         </div>
                     """, unsafe_allow_html=True)
                     display_article(article, idx, translator, tts)
-                    # st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div class='article-card' style='text-align: center;'>
@@ -765,15 +988,6 @@ def main():
                     else:
                         st.error("Unable to generate podcast")
 
-            # Show article sources in a clean grid
-            with st.expander("📚 Today's News Sources"):
-                for article in st.session_state.articles:
-                    st.markdown(f"""
-                        <div class='metric-card'>
-                            <strong style='color: #60A5FA;'>{article['source']}</strong>
-                            <p style='color: #9CA3AF; margin: 0;'>{article['title']}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div class='article-card' style='text-align: center;'>
@@ -782,7 +996,7 @@ def main():
                 </div>
             """, unsafe_allow_html=True)
 
-    # Enhanced sidebar information
+    # Sidebar with features info
     st.sidebar.markdown("""
         <div class='sidebar-card'>
             <h3 style='margin-top: 0; color: #60A5FA;'>ℹ️ Features</h3>
