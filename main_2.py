@@ -65,6 +65,73 @@ class ArticleTranslator:
             return text
 
 
+# class NewsContentScraper:
+#     def __init__(self):
+#         self.headers = {
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+#         }
+#         self.sources = {
+#             'MPR News': {
+#                 'url': 'https://www.mprnews.org',
+#                 'article_link_selector': 'a[href*="/story/"]'
+#             },
+#             'MinnPost': {
+#                 'url': 'https://www.minnpost.com',
+#                 'article_link_selector': 'h3.entry-title a'
+#             }
+#         }
+
+#     def get_links(self, source_name):
+#         source_config = self.sources[source_name]
+#         links = []
+#         try:
+#             response = requests.get(source_config['url'], headers=self.headers)
+#             soup = BeautifulSoup(response.content, 'html.parser')
+#             for link in soup.select(source_config['article_link_selector']):
+#                 href = link.get('href')
+#                 if href:
+#                     full_url = urljoin(source_config['url'], href)
+#                     links.append(full_url)
+#             return links
+#         except Exception as e:
+#             st.error(f"Error getting links from {source_name}: {str(e)}")
+#             return []
+
+#     def scrape_article(self, url):
+#         try:
+#             article = Article(url)
+#             article.download()
+#             article.parse()
+#             article.nlp()
+
+#             return {
+#                 'url': url,
+#                 'title': article.title,
+#                 'summary': article.summary,
+#                 'date': article.publish_date.strftime('%Y-%m-%d') if article.publish_date else "Unknown",
+#                 'timestamp': datetime.now().isoformat()
+#             }
+#         except Exception as e:
+#             st.error(f"Error scraping article {url}: {str(e)}")
+#             return None
+
+#     def scrape_news(self, total_articles=5):
+#         new_articles = []
+#         for source_name in self.sources:
+#             with st.spinner(f"Scraping {source_name}..."):
+#                 links = self.get_links(source_name)
+#                 for link in links:
+#                     if len(new_articles) >= total_articles:
+#                         break
+#                     article_data = self.scrape_article(link)
+#                     if article_data:
+#                         article_data['source'] = source_name
+#                         new_articles.append(article_data)
+#                     time.sleep(1)
+#                 if len(new_articles) >= total_articles:
+#                     break
+#         return new_articles[:total_articles]
+
 class NewsContentScraper:
     def __init__(self):
         self.headers = {
@@ -78,21 +145,64 @@ class NewsContentScraper:
             'MinnPost': {
                 'url': 'https://www.minnpost.com',
                 'article_link_selector': 'h3.entry-title a'
+            },
+            'Star Tribune': {
+                'url': 'https://www.startribune.com',
+                'article_link_selector': 'a.article-link'
+            },
+            'KSTP': {
+                'url': 'https://kstp.com/news',
+                'article_link_selector': 'h3.article-title a'
+            },
+            'Fox 9': {
+                'url': 'https://www.fox9.com/news',
+                'article_link_selector': 'article.story a'
             }
         }
 
+    def is_duplicate(self, new_article, existing_articles):
+        """
+        Check if an article is a duplicate based on title similarity or URL
+        """
+        if not new_article:
+            return True
+
+        # Create sets for duplicate checking
+        existing_urls = {article['url'] for article in existing_articles}
+        existing_titles = {article['title'].lower()
+                           for article in existing_articles}
+
+        # Direct URL match
+        if new_article['url'] in existing_urls:
+            return True
+
+        # Title similarity check using fuzzy matching
+        from difflib import SequenceMatcher
+
+        def similar(a, b, threshold=0.85):
+            return SequenceMatcher(None, a, b).ratio() > threshold
+
+        new_title = new_article['title'].lower()
+        for existing_title in existing_titles:
+            if similar(new_title, existing_title):
+                return True
+
+        return False
+
     def get_links(self, source_name):
         source_config = self.sources[source_name]
-        links = []
+        links = set()  # Using a set to avoid duplicate URLs
         try:
-            response = requests.get(source_config['url'], headers=self.headers)
+            response = requests.get(
+                source_config['url'], headers=self.headers, timeout=10)
             soup = BeautifulSoup(response.content, 'html.parser')
             for link in soup.select(source_config['article_link_selector']):
                 href = link.get('href')
                 if href:
+                    # Handle relative URLs
                     full_url = urljoin(source_config['url'], href)
-                    links.append(full_url)
-            return links
+                    links.add(full_url)
+            return list(links)
         except Exception as e:
             st.error(f"Error getting links from {source_name}: {str(e)}")
             return []
@@ -104,12 +214,18 @@ class NewsContentScraper:
             article.parse()
             article.nlp()
 
+            # Basic content validation
+            if not article.title or not article.summary or len(article.summary) < 50:
+                return None
+
             return {
                 'url': url,
                 'title': article.title,
                 'summary': article.summary,
                 'date': article.publish_date.strftime('%Y-%m-%d') if article.publish_date else "Unknown",
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                # Added for duplicate detection
+                'text_hash': hash(article.title + article.summary)
             }
         except Exception as e:
             st.error(f"Error scraping article {url}: {str(e)}")
@@ -117,19 +233,33 @@ class NewsContentScraper:
 
     def scrape_news(self, total_articles=5):
         new_articles = []
+        seen_urls = set()
+
         for source_name in self.sources:
+            if len(new_articles) >= total_articles:
+                break
+
             with st.spinner(f"Scraping {source_name}..."):
                 links = self.get_links(source_name)
+                # Randomize to get different articles each time
+                random.shuffle(links)
+
                 for link in links:
-                    if len(new_articles) >= total_articles:
-                        break
+                    if link in seen_urls:
+                        continue
+
+                    seen_urls.add(link)
                     article_data = self.scrape_article(link)
-                    if article_data:
+
+                    if article_data and not self.is_duplicate(article_data, new_articles):
                         article_data['source'] = source_name
                         new_articles.append(article_data)
-                    time.sleep(1)
-                if len(new_articles) >= total_articles:
-                    break
+
+                    if len(new_articles) >= total_articles:
+                        break
+
+                    time.sleep(1)  # Polite delay between requests
+
         return new_articles[:total_articles]
 
 
